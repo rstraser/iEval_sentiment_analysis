@@ -1,0 +1,169 @@
+---
+title: 'Sentiment analysis: student course evaluations'
+subtitle: 'Student course evaluations'
+author: "Rob Straser"
+date: "December 21st, 2020"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      results = "hide",
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+### What are course evaluations?
+
+Following an academic quarter, students participate in instructor evaluations to share thier personal feedback on their enrolled courses and the instructors methods in teaching the course. These evaluations typically include two evaluation components: (1) a numerical evaluation of a given criteria in which the student expresses the degree to which they agree or disagree (eg. TA was well organized for every lecture), and (2) a written evaluation where the students can leave more personalized comments based on their impressions of the course and the teaching assistant.
+
+While numerical values are easily evaluated (often expressed as a mean score out of a total), written responses can be more difficult to evaluate given the complexity of language structure. 
+
+However, sentinment analysis may help identify some common trends found in these written responses to help elucide student perceptions of the student instructure.  
+
+
+### What is sentiment analysis?
+
+This is where I talk about what sentiment analysis is.
+
+### How does it work?
+
+This is how sentiment analysis works.
+
+### What will be doing here?
+
+For this assignement, we will used data collected from my student evaluations from course I taught as a graduate teaching assistant (TA). These evaluations include student feedback from four courses I TA'd from 2018-2020. Using sentiment analysis, we will address two objectives:
+
+#### *1. Identify the most frequent positive and negative words expressed in student evaluations*
+#### *2. Examine most frequent words used in evaluations under a sentiment values*
+
+
+For our analyses, the following packages are required: 
+```{r}
+# tidy tools
+library(tidyverse)
+library(tidytext)
+library(stopwords)
+library(textdata)
+
+# extracting PDFs
+library(pdftools)
+
+# visualizations
+library(ggplot2)
+library(viridis)
+library(wordcloud)
+```
+
+### Inputting and cleaning data
+
+Sentiment analyses can be used on various formats containing written text. However, for our purpose, we will upload our text data in its original PDF format.
+
+```{r}
+# read in PDF
+ieval <- pdftools::pdf_text("iEval_Comments_concise.pdf") %>%
+         readr::read_lines()
+```
+
+Prior to loading the data, I concolidated all written evaluations onto a single PDF. This allowed unnessessry text from heading, instructions, questions, and numerical responses from the evaluation forms to be removed from our document. For more information on how to remove unwanted text from PDF documents proir to sentiment analysis, visit XXXX. Next we will remove unnessessary 'whitespace' from our document and 'tokenize' our text as to identify individual words in the document, arranging them by most common words used.
+
+```{r}
+# text cleaning
+iEval <-  ieval %>% 
+          str_squish() %>% 
+          as_tibble() %>% 
+          rename(text = 1)%>% 
+          unnest_tokens(word, text) %>%
+          anti_join(get_stopwords(), by = "word") %>%
+          group_by(word) %>% 
+          count() %>% 
+          ungroup() %>% 
+          slice(-c(1:115)) %>%
+          arrange(desc(n))
+```
+
+
+Data cleaning in a large part of the sentiment analysis process. You may have notices common word used that may hinder accurate translation in the sentiment analysis. These words can be removed from our observation prior to our analysis. Here, I removed words 'rob' (my name), 'jeopardy' (an exam prep game I run in my courses) and 'confused', which often comes up as a non-negative (eg. "helped me when I was confused on a topic"). 
+
+```{r}
+# remove unwanted words
+eval <- iEval %>%
+        filter(str_detect(word, "rob", negate = TRUE)) %>%
+        filter(str_detect(word, "jeopardy", negate = TRUE)) %>%
+        filter(str_detect(word, "confused", negate = TRUE))
+```
+
+
+There are various forms of sentiment analyses that differ slightly in how they interpret sentiment to individual words. The three main forms are: 'bing', 'afinn', and 'nrc'. Bing does this. Afinn does this. Nrc does this.
+
+We will first use 'bing' to assess most common 'positive' and 'negative' words used in my student evaluations, represented as barplots.
+
+```{r}
+# bing analysis
+bing_word_counts <- eval %>%
+                    inner_join(get_sentiments("bing")) %>%
+                    ungroup()
+
+# facet plot in descending order
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_head(n = 15) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+      scale_fill_viridis_d() + 
+      geom_col(show.legend = FALSE) +
+      facet_wrap(~sentiment, scales = "free_y") +
+      labs(x = "Contribution to sentiment (bing)",
+           y = NULL) +
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "grey"))
+  
+```
+
+Next we will use the 'afinn' analysis to observe the most common used words used in my student evaluations as ranked along a sentiment value gradient, as represented in descending barplots.
+
+```{r}
+
+# afinn analysis
+afinn = get_sentiments("afinn")
+
+eval.sentiments = eval %>% 
+  inner_join(afinn, by = "word")
+
+# plot decending order, color by value
+eval.sentiments  %>%
+  filter(n > 2) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n, fill = value)) +
+      scale_fill_viridis(option = "D") + 
+      geom_col(alpha = .8) +
+      coord_flip() +
+      labs(y = "Contribution to sentiment (afinn)")+
+      theme(panel.background = element_blank(), 
+            panel.grid = element_blank(),
+            legend.position = c(.75,.25))
+
+
+```
+
+Lastly, we use the same data to visualize the relationship between the sentiment value of all common words used with the number of times they were mentioned in the student evaluations. Based on our previous observations, we would expect a positive trend given the majority of words used scored highly on the sentiment value scale under 'afinn'.
+
+```{r}
+# plot sentiment value ~ number of times word used, color by value
+ggplot(eval.sentiments, aes(value, log10(n)))+
+    geom_point(aes(color = value)) +
+    geom_jitter(aes(color = value)) +
+    scale_color_viridis(option = "D") +
+    geom_smooth(method=lm, color="black", size=0.5) +
+    labs(x = "Sentiment value (afinn)") +
+    labs(y = "Log(word count)") +
+    theme_classic()
+  
+```
+
+
+Sentiment analysis is not perfect, and a lot of care must be taken to best interpret the generated results. For instance, negative words could be non-negative if preceeding a negative ('not bad', 'never complained', 'never impatient'), and vice versa (eg. 'did not enjoy', 'was no help', 'was never approachable'). However, despite these limitations, sentiment analyses can be a powerful in generating insight to general perceptions from large forms of written text in relatively short order.
