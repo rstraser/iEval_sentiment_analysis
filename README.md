@@ -17,7 +17,7 @@
 * data visualizations
 
 ## Technologies
-* R (version 3.4.1)
+* R (v3.6.1)
 
 ## Packages
 * tidyverse
@@ -53,10 +53,9 @@ While numerical values are easily evaluated (usually expressed as an average out
 ## Getting Started
 
 1. Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
-2. Raw data are stored [here](https://help.github.com/articles/cloning-a-repository/)) within this repo.    
-3. Data processing and analysis scripts are stored [here](https://help.github.com/articles/cloning-a-repository/).
-4. Follow setup tutorial [here](https://help.github.com/articles/cloning-a-repository/). 
-5. Additionally, written responses can be found in my [blog post](https://help.github.com/articles/cloning-a-repository/).  
+2. Raw data are stored [here](https://github.com/rstraser/iEval_sentiment_analysis/blob/main/data/iEval_Comments_concise.pdf) within this repo.    
+3. Data processing and analysis scripts are stored [here](https://github.com/rstraser/iEval_sentiment_analysis/blob/main/Sentiment_analysis_iEvals.Rmd).
+4. Additionally, a written tutorial can be found on my [blog post](https://www.robstraser.com/blog-1/sentiment-analysis-course-eval).  
 
 
 ## Contact
