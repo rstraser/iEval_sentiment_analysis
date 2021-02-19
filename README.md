@@ -1,5 +1,5 @@
 ### Sentiment analysis on teaching evaluations:
-# What do your students think of you?
+# -- What do your students think of you?
 
 ## Tl;dr
 
@@ -8,19 +8,24 @@
 * Here, I will explore the utility of sentiment analysis in better understanding student perceptions using my personal teaching evaluations.
 
 
-<!-- TABLE OF CONTENTS -->
-<details open="open">
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about-the-project">About the project</a>
-    <li><a href="#diving-into-the-code">Diving into the code</a>
-    <li><a href="#concluding-remarks">Concluding remarks</a></li>
-  </ol>
-</details>
+## Analytics
+* data processing/cleaning
+* sentiment analysis
+* data visualizations
+
+## Technologies
+* R
+
+## Packages
+* tidyverse
+* tidytext
+* textdata
+* stopwords
+* pdftools
+* ggplot2
+* viridis
 
 
-
-<!-- ABOUT THE PROJECT -->
 ## About the project
 
 ### WHAT ARE TEACHING ASSISTANT COURSE EVALUATIONS?
@@ -42,138 +47,21 @@ While numerical values are easily evaluated (usually expressed as an average out
 * What are the most frequent words used by students in their evaluations?
 * How are these words ranked in regards to their sentiment value?
 
-<!-- DIVING INTO THE CODE -->
-## Diving into the code
+## Getting Started
 
-To help explore various methods in sentiment analysis, I will be using the following packages in R:
-
-  ```sh
-  # tidy tools
-library(tidyverse)
-library(tidytext)
-library(stopwords)
-library(textdata)
-
-# extracting PDFs
-library(pdftools)
-
-# visualizations
-library(ggplot2)
-library(viridis)
-  ```
-Next, I will input and clean the data. Sentiment analysis can be used on various formats containing written text. However, for my purposes, I will upload the written text data from its original PDF format.
-
-  ```sh
-# read in PDF
-ieval <- pdftools::pdf_text("iEval_Comments_concise.pdf") %>%
-        readr::read_lines()
-  ```
-Prior to loading the data, I consolidated all written evaluations into a single PDF. This allowed unnessessry text generated from headings, instructions, questions, and numerical responses on the evaluation forms to be removed from the document. Next I will remove unnessessary 'whitespace' from the document and 'tokenize' the text to identify individual words contained in the document, arranging them by most frequently used.
+1. Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
+2. Raw data are stored [here](https://help.github.com/articles/cloning-a-repository/)) within this repo.    
+3. Data processing and analysis scripts are stored [here](https://help.github.com/articles/cloning-a-repository/).
+4. Follow setup tutorial [here] (https://help.github.com/articles/cloning-a-repository/). 
+5. Additionally, written responses can be found in my [blog post](https://help.github.com/articles/cloning-a-repository/).  
 
 
-  ```sh
-# text cleaning
-iEval <-  ieval %>% 
-          str_squish() %>% 
-          as_tibble() %>% 
-          rename(text = 1)%>% 
-          unnest_tokens(word, text) %>%
-          anti_join(get_stopwords(), by = "word") %>%
-          group_by(word) %>% 
-          count() %>% 
-          ungroup() %>% 
-          slice(-c(1:115)) %>%
-          arrange(desc(n))
-  ```
-Data cleaning is a large part of the sentiment analysis process. There are many common words used that may hinder accurate translation in the sentiment analysis. These words can be removed from observation prior to the analysis. Here, I removed words 'rob' (my name), 'jeopardy' (an exam prep game I used frquently in my courses) and 'confused', which often came up as a non-negative (eg. "helped me when I was confused on a topic").
-  
-  ```sh
-# remove unwanted words
-eval <- iEval %>%
-        filter(str_detect(word, "rob", negate = TRUE)) %>%
-        filter(str_detect(word, "jeopardy", negate = TRUE)) %>%
-        filter(str_detect(word, "confused", negate = TRUE))
-  ```
-There are various forms of sentiment analysis that differ in how they interpret the sentiment text. The three main forms are: 'bing', 'afinn', and 'nrc'. Each form of analysis differs slightly in it's evaluation of word sentiment and provides various classification scales (eg. positive - negative, sad - happy, etc.). In practice, using multiple forms of analysis may likely result in more robust evaluations of sentiment.
-
-I will first use 'bing' to assess the most common 'positive' and 'negative' words used in my student evaluations, visualizing the data as barplots.
-  
-  
-  
-  ```sh
-# bing analysis
-bing_word_counts <- eval %>%
-                    inner_join(get_sentiments("bing")) %>%
-                    ungroup()
-
-# facet plot in descending order
-bing_word_counts %>%
-    group_by(sentiment) %>%
-    slice_head(n = 15) %>%
-    ungroup() %>%
-    mutate(word = reorder(word, n)) %>%
-    ggplot(aes(n, word, fill = sentiment)) +
-            scale_fill_viridis_d() + 
-            geom_col(show.legend = FALSE) +
-            facet_wrap(~sentiment, scales = "free_y") +
-            labs(x = "Contribution to sentiment (bing)", 
-                 y = NULL) +
-            theme(panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(), 
-            axis.line = element_line(colour = "grey"))
-  ```
-Next I will use the 'afinn' analysis to observe the most commonly used words in my TA evaluations as ranked along a sentiment value gradient, visualized as descending barplots.
-
-  ```sh
-# afinn analysis
-afinn = get_sentiments("afinn")
-
-eval.sentiments = eval %>% 
-inner_join(afinn, by = "word")
-
-# plot descending order, color by value
-eval.sentiments  %>%
-    filter(n > 2) %>%
-    mutate(word = reorder(word, n)) %>%
-    ggplot(aes(x = word, y = n, fill = value)) +
-        scale_fill_viridis(option = "D") + 
-        geom_col(alpha = .8) +
-        coord_flip() +
-        labs(y = "Contribution to sentiment (afinn)")+
-        theme(panel.background = element_blank(), 
-        panel.grid = element_blank(),
-        legend.position = c(.75,.25))
-  ```
-Lastly, I will use the same data to visualize the relationship between the sentiment value of each commonly used word with the number of times that word was mentioned in the TA evaluations. Based on the previous observation, I would expect a positive trend given the majority of words used scored highly on the sentiment value scale under 'afinn'.
-
-  ```sh
-# plot sentiment value ~ frequency, color by value
-ggplot(eval.sentiments, aes(value, log10(n))) +
-    geom_point(aes(color = value)) +
-    geom_jitter(aes(color = value)) +
-    scale_color_viridis(option = "D") +
-    geom_smooth(method=lm, color="black", size=0.5) +
-    labs(x = "Sentiment value (afinn)") +
-    labs(y = "Log(word count)") +
-    theme_classic()
-  ```
-
-<!-- CONCLUDING REMARKS -->
-## Concluding remarks
-
-There you have it! A fun exercise exploring the utility, and general concepts behind sentiment analysis (albeit just scratching the surface). Using sentiment analysis, I was able to gain an improved understanding to the underlying perceptions my students had on me as their course instructor. Furthermore, this processed allowed me to see which teaching traits had the greatest positive (or in some circumstances, negative) impact on my student's learning experience, providing me the opportunty to improve my teaching methods to become a more effective instructor.
-
-Human language is complex, and even trained machine algorithms will have difficulty understanding the various nuances involved in grammar, slang, and context. Sentiment analysis is not perfect, and a lot of care must be taken to best interpret the results. However, despite these limitations, sentiment analyses can be a powerful tool for exploring underlying opinons and perceptions in complex written text.
-
-
-<!-- CONTACT -->
 ## Contact
 
 Rob Straser
-* email: robstraser@gmail.com. 
-* Website: [RobStraser.com](https://robstraser.com). 
-* Twitter: [@RobStraser](https://twitter.com/RobStraser). 
+* email: robstraser@gmail.com 
+* website: [RobStraser.com](https://robstraser.com)
+* twitter: [@RobStraser](https://twitter.com/RobStraser) 
 
 
 
