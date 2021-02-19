@@ -7,8 +7,8 @@
 * Sentiment analysis can identify trends found in written evaluations to help elucidate general perceptions of the course instructor - allowing instructors to see the traits that most affect their student’s learning. 
 * Here, I will explore the utility of sentiment analysis in better understanding student perceptions using my personal teaching evaluations.
 
-## Figures
-![all_figs](./fig/all_gigs.png)
+## Figs
+![all_figs](https://github.com/rstraser/iEval_sentiment_analysis/blob/main/fig/all_figs.png)
 
 
 ## Analytics
