@@ -1,11 +1,14 @@
 ### Sentiment analysis on teaching evaluations:
-# -- What do your students think of you?
+# What do your students think of you?
 
 ## Tl;dr
 
 * Teaching evaluations can help instructors better understand their student’s learning experience, however interpreting mass amounts of written responses can make identifying common perceptions difficult. 
 * Sentiment analysis can identify trends found in written evaluations to help elucidate general perceptions of the course instructor - allowing instructors to see the traits that most affect their student’s learning. 
 * Here, I will explore the utility of sentiment analysis in better understanding student perceptions using my personal teaching evaluations.
+
+## Screenshots
+![Example screenshot](./img/screenshot.png)
 
 
 ## Analytics
@@ -14,7 +17,7 @@
 * data visualizations
 
 ## Technologies
-* R
+* R (version 3.4.1)
 
 ## Packages
 * tidyverse
@@ -52,7 +55,7 @@ While numerical values are easily evaluated (usually expressed as an average out
 1. Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
 2. Raw data are stored [here](https://help.github.com/articles/cloning-a-repository/)) within this repo.    
 3. Data processing and analysis scripts are stored [here](https://help.github.com/articles/cloning-a-repository/).
-4. Follow setup tutorial [here] (https://help.github.com/articles/cloning-a-repository/). 
+4. Follow setup tutorial [here](https://help.github.com/articles/cloning-a-repository/). 
 5. Additionally, written responses can be found in my [blog post](https://help.github.com/articles/cloning-a-repository/).  
 
 
